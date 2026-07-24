@@ -1,8 +1,9 @@
-
 /* global describe, it */
 
 var assert = require("assert");
 var fs = require("fs");
+
+const {GetObjectCommand, CopyObjectCommand} = require('@aws-sdk/client-s3');
 
 var index = require("../index");
 
@@ -16,15 +17,21 @@ describe('index.js', function() {
       };
       var overrides = {
         s3: {
-          copyObject: function(options, callback) {
-            callback(null);
-          },
-          getObject: function(options, callback) {
-            callback(null, {Body: "email data"});
+          send: function(options, callback) {
+            if (options instanceof CopyObjectCommand)
+              callback(null);
+            else if (options instanceof GetObjectCommand)
+              callback(null, {
+                Body: {
+                  transformToString: function() {
+                    return "email data";
+                  }
+                }
+              });
           }
         },
         ses: {
-          sendRawEmail: function(options, callback) {
+          send: function(options, callback) {
             callback(null, {status: "ok"});
           }
         },

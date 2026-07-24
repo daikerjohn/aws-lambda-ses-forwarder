@@ -1,8 +1,7 @@
 "use strict";
 
-import { S3Client, CopyObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { SESClient, SendRawEmailCommand } from "@aws-sdk/client-ses";
-import { Buffer } from "buffer";
+const { S3Client, CopyObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { SESv2Client, SendEmailCommand } = require("@aws-sdk/client-sesv2");
 
 console.log("AWS Lambda SES Forwarder // @arithmetric // Version 5.2.0");
 
@@ -60,11 +59,11 @@ var defaultConfig = {
 const parseEvent = function(data) {
   // Validate characteristics of a SES event record.
   if (!data.event ||
-      !data.event.hasOwnProperty('Records') ||
-      data.event.Records.length !== 1 ||
-      !data.event.Records[0].hasOwnProperty('eventSource') ||
-      data.event.Records[0].eventSource !== 'aws:ses' ||
-      data.event.Records[0].eventVersion !== '1.0') {
+    !Object.hasOwn(data.event, 'Records') ||
+    data.event.Records.length !== 1 ||
+    !Object.hasOwn(data.event.Records[0], 'eventSource') ||
+    data.event.Records[0].eventSource !== 'aws:ses' ||
+    data.event.Records[0].eventVersion !== '1.0') {
     data.log({
       message: "parseEvent() received invalid SES message:",
       level: "error", event: JSON.stringify(data.event)
@@ -94,7 +93,7 @@ const transformRecipients = function(data) {
     if (data.config.allowPlusSign) {
       origEmailKey = origEmailKey.replace(/\+.*?@/, '@');
     }
-    if (data.config.forwardMapping.hasOwnProperty(origEmailKey)) {
+    if (Object.hasOwn(data.config.forwardMapping, origEmailKey)) {
       newRecipients = newRecipients.concat(
         data.config.forwardMapping[origEmailKey]);
       data.originalRecipient = origEmail;
@@ -108,17 +107,17 @@ const transformRecipients = function(data) {
         origEmailDomain = origEmailKey.slice(pos);
         origEmailUser = origEmailKey.slice(0, pos);
       }
-      if (origEmailUser &&
-        data.config.forwardMapping.hasOwnProperty(origEmailUser)) {
-        newRecipients = newRecipients.concat(
-          data.config.forwardMapping[origEmailUser]);
-        data.originalRecipient = origEmail;
-      } else if (origEmailDomain &&
-          data.config.forwardMapping.hasOwnProperty(origEmailDomain)) {
+      if (origEmailDomain &&
+        Object.hasOwn(data.config.forwardMapping, origEmailDomain)) {
         newRecipients = newRecipients.concat(
           data.config.forwardMapping[origEmailDomain]);
         data.originalRecipient = origEmail;
-      } else if (data.config.forwardMapping.hasOwnProperty("@")) {
+      } else if (origEmailUser &&
+        Object.hasOwn(data.config.forwardMapping, origEmailUser)) {
+        newRecipients = newRecipients.concat(
+          data.config.forwardMapping[origEmailUser]);
+        data.originalRecipient = origEmail;
+      } else if (Object.hasOwn(data.config.forwardMapping, "@")) {
         newRecipients = newRecipients.concat(
           data.config.forwardMapping["@"]);
         data.originalRecipient = origEmail;
@@ -153,49 +152,47 @@ const fetchMessage = async function(data) {
     message: "Fetching email at s3://" + data.config.emailBucket + '/' +
       data.config.emailKeyPrefix + data.email.messageId
   });
+  return new Promise(function(resolve, reject) {
+    data.s3.send(new CopyObjectCommand({
+      Bucket: data.config.emailBucket,
+      CopySource: data.config.emailBucket + '/' + data.config.emailKeyPrefix +
+        data.email.messageId,
+      Key: data.config.emailKeyPrefix + data.email.messageId,
+      ACL: 'private',
+      ContentType: 'text/plain',
+      StorageClass: 'STANDARD'
+    }), function(err) {
+      if (err) {
+        data.log({
+          level: "error",
+          message: "CopyObjectCommand() returned error:",
+          error: err,
+          stack: err.stack
+        });
+        return reject(
+          new Error("Error: Could not make readable copy of email."));
+      }
 
-  const copyCommand = new CopyObjectCommand({
-    Bucket: data.config.emailBucket,
-    CopySource: data.config.emailBucket + '/' + data.config.emailKeyPrefix +
-      data.email.messageId,
-    Key: data.config.emailKeyPrefix + data.email.messageId,
-    ACL: 'private',
-    ContentType: 'text/plain',
-    StorageClass: 'STANDARD'
-  });
-
-  let response;
-  try {
-    response = await data.s3.send(copyCommand);
-  } catch( err ) {
-    data.log({
-      level: "error",
-      message: "copyObject() returned error:",
-      error: err,
-      stack: err.stack
+      // Load the raw email from S3
+      data.s3.send(new GetObjectCommand({
+        Bucket: data.config.emailBucket,
+        Key: data.config.emailKeyPrefix + data.email.messageId
+      }), async function(err, result) {
+        if (err) {
+          data.log({
+            level: "error",
+            message: "GetObjectCommand() returned error:",
+            error: err,
+            stack: err.stack
+          });
+          return reject(
+            new Error("Error: Failed to load message body from S3."));
+        }
+        data.emailData = await result.Body.transformToString();
+        return resolve(data);
+      });
     });
-    throw new Error("Error: Could not make readable copy of email.");
-  }
-
-  const getCommand = new GetObjectCommand({
-    Bucket: data.config.emailBucket,
-    Key: data.config.emailKeyPrefix + data.email.messageId
   });
-
-  try {
-    response = await data.s3.send(getCommand);
-  } catch( err ) {
-    data.log({
-      level: "error",
-      message: "getObject() returned error:",
-      error: err,
-      stack: err.stack
-    });
-    throw new Error("Error: Failed to load message body from S3.");
-  }
-
-  data.emailData = await response.Body.transformToString();
-  return data;
 };
 
 /**
@@ -330,7 +327,37 @@ const checkSpam = function(data) {
 };
 
 /**
- * Send email using the SES sendRawEmail command.
+ * Checks spam and virus verdict, rejecting if not "PASS".
+ *
+ * @param {object} data - Data bundle with context, email, etc.
+ *
+ * @return {object} - Promise resolved with data.
+ */
+const checkSpam = function(data) {
+  var match = data.emailData.match(/^((?:.+\r?\n)*)(\r?\n(?:.*\s+)*)/m);
+  var header = match && match[1] ? match[1] : data.emailData;
+  var subject = header.match(/^Subject: (.*)/mg);
+
+  if (data.spamVerdict.status !== "PASS") {
+    data.log({level: "error", message: "spamVerdict not clean:",
+      event: JSON.stringify(data.event)});
+    data.log({level: "error", message: "Subject: " + subject});
+    return Promise.reject(new Error('Error: spamVerdict not clean.'));
+  }
+
+  if (data.virusVerdict.status !== "PASS") {
+    data.log({level: "error", message: "virusVerdict not clean:",
+      event: JSON.stringify(data.event)});
+    data.log({level: "error", message: "Subject: " + subject});
+    return Promise.reject(new Error('Error: virusVerdict not clean.'));
+  }
+
+  data.log({level: "info", message: "checkSpam run and passed"});
+  return Promise.resolve(data);
+};
+
+/**
+ * Send email using the SESv2 SendEmailCommand command.
  *
  * @param {object} data - Data bundle with context, email, etc.
  *
@@ -338,11 +365,9 @@ const checkSpam = function(data) {
  */
 const sendMessage = async function(data) {
   var params = {
-    Destinations: data.recipients,
+    Destination: { ToAddresses: data.recipients },
     Source: data.originalRecipient,
-    RawMessage: {
-      Data: Buffer.from(data.emailData)
-    }
+    Content: { Raw: { Data: Buffer.from(data.emailData) } },
   };
   data.log({
     level: "info",
@@ -350,26 +375,24 @@ const sendMessage = async function(data) {
       data.originalRecipients.join(", ") + ". Transformed recipients: " +
       data.recipients.join(", ") + "."
   });
-
-  const sendCommand = new SendRawEmailCommand(params);
-
-  let response;
-  try {
-    response = await data.ses.send(sendCommand);
-  } catch( err ) {
-    data.log({
-      level: "error",
-      message: "sendRawEmail() returned error.",
-      error: err,
-      stack: err.stack,
+  return new Promise(function(resolve, reject) {
+    data.ses.send(new SendEmailCommand(params), function(err, result) {
+      if (err) {
+        data.log({
+          level: "error",
+          message: "SendEmailCommand() returned error.",
+          error: err,
+          stack: err.stack
+        });
+        return reject(new Error('Error: Email sending failed.'));
+      }
+      data.log({
+        level: "info",
+        message: "SendEmailCommand() successful.",
+        result: result
+      });
+      resolve(data);
     });
-    throw new Error('Error: Email sending failed.');
-  }
-
-  data.log({
-    level: "info",
-    message: "sendRawEmail() successful.",
-    result: response,
   });
   return data;
 };
@@ -386,24 +409,22 @@ const sendMessage = async function(data) {
  */
 export const handler = function(event, context, callback, overrides) {
   var steps = overrides && overrides.steps ? overrides.steps :
-    [
-      parseEvent,
-      transformRecipients,
-      fetchMessage,
-      processMessage,
-      checkSpam,
-      sendMessage
-    ];
+      [
+        exports.parseEvent,
+        exports.transformRecipients,
+        exports.fetchMessage,
+        exports.processMessage,
+        exports.sendMessage
+      ];
   var data = {
     event: event,
     callback: callback,
     context: context,
     config: overrides && overrides.config ? overrides.config : defaultConfig,
     log: overrides && overrides.log ? overrides.log : console.log,
-    ses: overrides && overrides.ses ? overrides.ses : new SESClient(),
-    s3: overrides && overrides.s3 ? overrides.s3 : new S3Client(
-      defaultConfig.emailBucketRegion ? {region: defaultConfig.emailBucketRegion} : {}
-    )
+    ses: overrides && overrides.ses ? overrides.ses : new SESv2Client(),
+    s3: overrides && overrides.s3 ?
+      overrides.s3 : new S3Client({signatureVersion: 'v4'})
   };
   Promise.series(steps, data)
     .then(function(data) {
