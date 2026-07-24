@@ -1,5 +1,8 @@
 "use strict";
 
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
 const { S3Client, CopyObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 const { SESv2Client, SendEmailCommand } = require("@aws-sdk/client-sesv2");
 
@@ -36,7 +39,7 @@ console.log("AWS Lambda SES Forwarder // @arithmetric // Version 5.2.0");
 //   and domain part of an email address (i.e. `info`).
 //
 //   To match all email addresses matching no other mapping, use "@" as a key.
-var defaultConfig = {
+export const defaultConfig = {
   fromEmail: "noreply@daikerjohn.cc",
   subjectPrefix: "",
   emailBucket: "emailbucket-daikerjohncc",
@@ -327,36 +330,6 @@ const checkSpam = function(data) {
 };
 
 /**
- * Checks spam and virus verdict, rejecting if not "PASS".
- *
- * @param {object} data - Data bundle with context, email, etc.
- *
- * @return {object} - Promise resolved with data.
- */
-const checkSpam = function(data) {
-  var match = data.emailData.match(/^((?:.+\r?\n)*)(\r?\n(?:.*\s+)*)/m);
-  var header = match && match[1] ? match[1] : data.emailData;
-  var subject = header.match(/^Subject: (.*)/mg);
-
-  if (data.spamVerdict.status !== "PASS") {
-    data.log({level: "error", message: "spamVerdict not clean:",
-      event: JSON.stringify(data.event)});
-    data.log({level: "error", message: "Subject: " + subject});
-    return Promise.reject(new Error('Error: spamVerdict not clean.'));
-  }
-
-  if (data.virusVerdict.status !== "PASS") {
-    data.log({level: "error", message: "virusVerdict not clean:",
-      event: JSON.stringify(data.event)});
-    data.log({level: "error", message: "Subject: " + subject});
-    return Promise.reject(new Error('Error: virusVerdict not clean.'));
-  }
-
-  data.log({level: "info", message: "checkSpam run and passed"});
-  return Promise.resolve(data);
-};
-
-/**
  * Send email using the SESv2 SendEmailCommand command.
  *
  * @param {object} data - Data bundle with context, email, etc.
@@ -407,14 +380,16 @@ const sendMessage = async function(data) {
  * @param {object} overrides - Overrides for the default data, including the
  * configuration, SES object, and S3 object.
  */
+const exported = {};
+
 export const handler = function(event, context, callback, overrides) {
   var steps = overrides && overrides.steps ? overrides.steps :
       [
-        exports.parseEvent,
-        exports.transformRecipients,
-        exports.fetchMessage,
-        exports.processMessage,
-        exports.sendMessage
+        exported.parseEvent,
+        exported.transformRecipients,
+        exported.fetchMessage,
+        exported.processMessage,
+        exported.sendMessage
       ];
   var data = {
     event: event,
@@ -455,3 +430,12 @@ Promise.series = function(promises, initValue) {
     return chain.then(promise);
   }, Promise.resolve(initValue));
 };
+
+exported.parseEvent = parseEvent;
+exported.transformRecipients = transformRecipients;
+exported.fetchMessage = fetchMessage;
+exported.processMessage = processMessage;
+exported.checkSpam = checkSpam;
+exported.sendMessage = sendMessage;
+exported.handler = handler;
+exported.defaultConfig = defaultConfig;

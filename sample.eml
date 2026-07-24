@@ -1,0 +1,258 @@
+Return-Path: <bounce-QL6HEVIHOSYEBDHRMASVVSOQ5Y.10205@bounce.fanmail.timbers.com>
+Received: from mta.fanmail.timbers.com (mta.fanmail.timbers.com [128.17.1.47])
+ by inbound-smtp.us-west-2.amazonaws.com with SMTP id 4bq0truejjp64s3ss7nm03l5q0op52a12o0p5b01
+ for timbers@daikerjohn.cc;
+ Fri, 24 Jul 2026 12:04:30 +0000 (UTC)
+X-SES-Spam-Verdict: PASS
+X-SES-Virus-Verdict: PASS
+Received-SPF: pass (spfCheck: domain of bounce.fanmail.timbers.com designates 128.17.1.47 as permitted sender) client-ip=128.17.1.47; envelope-from=bounce-QL6HEVIHOSYEBDHRMASVVSOQ5Y.10205@bounce.fanmail.timbers.com; helo=mta.fanmail.timbers.com;
+Authentication-Results: amazonses.com;
+ spf=pass (spfCheck: domain of bounce.fanmail.timbers.com designates 128.17.1.47 as permitted sender) client-ip=128.17.1.47; envelope-from=bounce-QL6HEVIHOSYEBDHRMASVVSOQ5Y.10205@bounce.fanmail.timbers.com; helo=mta.fanmail.timbers.com;
+ dkim=pass header.i=@s1.y.mc.salesforce.com;
+ dkim=pass header.i=@fanmail.timbers.com;
+ dmarc=pass header.from=fanmail.timbers.com;
+X-SES-RECEIPT: AEFBQUFBQUFBQUFFR0QzYW1oWmp6NzVHVC8vZ2hpZzRvcFdMcXF6QmE5Y3dPMnkveXg1YTZ0SUJaK215T1drUEFWekNyeU5HbGFSM1RhSHhxbk1tREZacjNTNkd3R01OanVxVUl2bjZVNlRqbHJzQUs0Rm5RSlpyUXBmUFRjclZSQUw3VTVkdmVURmZpeG9HRGFQb1BBalBuL0JMZUdIUVZES1ZseW1MYjEyeWIxVmZ6WmlQaXgwLzNLaVliNzByVGhVTXhLdWNnb3F1dmxDdDhKbHJuT1RxUWRTSFdFMVhPOHZaTS91MFJYZVhEb2k1N0V2OXZ6Y0psZW94d2pLaTBIcm9iVnZCSnNCRFByNUwxdGo0Q0NWeVZuU1Q2SFJ6aWk0dEUwKzBmNlZFL05la1JDSE03OHhUQURoa1VSZW84NDNUalR0eHJDeVg3YVZObTlTOHJ6dVNWQk1WNkpqYzlNYnF4L1h0VkxGcDNMZGpucGJ3clpBPT0=
+X-SES-DKIM-SIGNATURE: a=rsa-sha256; q=dns/txt; b=CI5sQAsIDWSTM20dSL0F37wUyao3zw3zuG7qnO2e3YLmtfEAkKLx/nojHHQiS0VdiJBJ7KLNJf/Ysi6TYOdzhfe+cSTP6a39ls0Joy5+6Vnol7dctEnWxuEqnNv3nqAFyBSgodapvSMcCBIFmfqr0e9QsTB5WcixEEJnxiGgnb0=; c=relaxed/simple; s=hsbnp7p3ensaochzwyq5wwmceodymuwv; d=amazonses.com; t=1784894671; v=1; bh=7AoWAnHvv7v+I0Df409VvZhlowzw+2ty77NAfURD30A=; h=From:To:Cc:Bcc:Subject:Date:Message-ID:MIME-Version:Content-Type:X-SES-RECEIPT;
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; s=200608; d=fanmail.timbers.com;
+ h=From:To:Subject:Date:List-Unsubscribe:List-Unsubscribe-Post:MIME-Version:
+ Reply-To:Message-ID:Content-Type; i=reply@fanmail.timbers.com;
+ bh=RfuMxXjbNBecRtldOcgDtPJvq1QlUrku10eoMCWK5G0=;
+ b=pJ7mwGRis50FUxtMjwecErLqeXEqJ3QNQIOXrMpUZAlV3zubFV/8EbuCPgpKTE39+sxUusGj9fBd
+   sShXqBIU3ZE5+P3ciSgX/5brAEy8TErYioFfW7jA1yFAzsKuqk4gna6+MscKEqNZFo0nMXlUCp4A
+   jxxlPGi+3elK3GifJjQ=
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; s=fbldkim1; d=s1.y.mc.salesforce.com;
+ h=From:To:Subject:Date:List-Unsubscribe:List-Unsubscribe-Post:MIME-Version:
+ Reply-To:Message-ID:Content-Type;
+ bh=RfuMxXjbNBecRtldOcgDtPJvq1QlUrku10eoMCWK5G0=;
+ b=a1ZBP6t5xA+lt3tlSyKwQ3HLgsC+QarBvbkl7u8yR/KBmNC66YgA3vQLMbxfjuZyIhQvvSnqFfNP
+   SdyA0qTraNyiBfov/sydBcKJUndHh6U/vU5l3JaadHpAzoagNatf3k2FOa5St6Fqlv5Z23/RClxC
+   RmmaknmVGv7DGEkT3DTMhkpxUKTYQ4jVFK0KtMjQ7aqVEBHRqvRd/L2lB3kimKzKCiAE1oeoCOjL
+   khN7RaJZt5JR1p3J9wp7v6Hmsnlsn4/vPS/XjuaDPY1x4X9yGkSJMi57WRItMfRDecSziaetIDly
+   CG1mYQpMlckPsud7R1ReBpQwhXm6CF7x+Kx4SQ==
+Received: by mta.fanmail.timbers.com id hcdacq39mjcf for <timbers@daikerjohn.cc>; Fri, 24 Jul 2026 12:04:29 +0000 (envelope-from <bounce-QL6HEVIHOSYEBDHRMASVVSOQ5Y.10205@bounce.fanmail.timbers.com>)
+From: "Portland Timbers" <reply@fanmail.timbers.com>
+To: <timbers@daikerjohn.cc>
+Subject: Celebrate Pride Night on July 25 vs. Real Salt Lake
+Date: Fri, 24 Jul 2026 06:04:29 -0600
+List-Unsubscribe: <https://click.fanmail.timbers.com/subscription_center.aspx?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiIxMDk4MzQ3NSIsInMiOiI5MTI3NzA3MTQiLCJsaWQiOiIxNzUyMjQyNyIsImoiOiI0MzA3MTIzMSIsImpiIjoiNjgxIiwiZCI6IjEwMjA1In0.6u6O8J1TJ9sMUHMvNr497PDvHY2HUKTQF4smiqM9nRI>, <mailto:leave-A5SYFYUI7QOEVCFY3BVCBYJRYQ.10205@leave.fanmail.timbers.com>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+MIME-Version: 1.0
+Reply-To: "Portland Timbers" <reply-VJRQVNR3MM2E3EVPWOTHTDM22E.10205@fanmail.timbers.com>
+X-SFMC-Stack: 1
+x-job: 10983475_43071231
+Message-ID: <e193efe0-1ee4-4dfc-b657-99808d5d5900@ind1s01mta0205.xt.local>
+Content-Type: multipart/alternative;
+	boundary="FZxk9uCIOI3y=_?:"
+
+This is a multi-part message in MIME format.
+
+--FZxk9uCIOI3y=_?:
+Content-Type: text/plain;
+	charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+To view this email as a web page, go to the link below, or copy and paste it into your browser's address window.
+https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKd5VNPdaYn2Ck00bhmDQabgQ973grhxGtln6wwfCzvacDwwD0Ge6YTifVkAppMN6KLLz5ziOvzyKbUytpGeokPMYrjZzzTD
+ 
+
+
+----------------------------------------
+This email was sent by: Portland Timbers
+1844 SW Morrison, 
+Portland, OR, 97205 USA 
+
+Privacy Policy: https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKd6MgdgZVlHMur1T1VsoQpRRNlOTYfW1PmC2ShwKvHO5xpT3biJFLQRCFN5qUbhDD4BeZsRskHM3MGnGbcNCO7LHBWSPNiX
+Update Profile: https://click.fanmail.timbers.com/profile_center.aspx?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKd7CT-wf0S53QFvbc4ZK02kvUzJb1O99ybppzik8jlol6CkmL9dpibw8Wakf2a5Y2tnk2EJ_gxKJcm7tlN6PTssZIXT4SvCKsPxmDw_5Sf-Jav2t2DEHR5Xtu4
+Manage Subscriptions:  https://click.fanmail.timbers.com/subscription_center.aspx?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKd81BZBpRHb2cBZ4Cy6Dc6xRfUHu0Rrf5_vwSpYNsTtqFYruMpFpp-IiVp4gVHx4JSBYtDe1vc-Xmk74gzBIXXc4Hv09k1G2980b_6q0d5POjZlb4XyQjxxRxA
+Unsubscribe:  https://click.fanmail.timbers.com/unsub_center.aspx?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKd92bMOezzf-7DAk_R2LKDAZ3ocVTP_hgy7heBZo7pY5Ktz-RkjUgzqMt3KD6FLUvrOTyK3eqzvCF5kAI8qlQgluByg2Xc2eKqhHxmRfU1FRQUB-oPejW1AvpSCkQ
+
+
+--FZxk9uCIOI3y=_?:
+Content-Type: text/html;
+	charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <style type="text/css">
+      ReadMsgBody{ width: 100%;}
+      .ExternalClass {width: 100%;}
+      .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div {line-height: 100%;}
+      body {-webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;margin:0 !important;}
+      p { margin: 1em 0;}
+      table td { border-collapse: collapse;}
+      img {outline:0;}
+      a img {border:none;}
+      @-ms-viewport{ width: device-width;}
+    </style>
+    <style type="text/css">
+      @media only screen and (max-width: 480px) {
+        .container {width: 100% !important;}
+        .footer { width:auto !important; margin-left:0; }
+        .mobile-hidden { display:none !important; }
+        .logo { display:block !important; padding:0 !important; }
+        img { max-width:100% !important; height:auto !important; max-height:auto !important;}
+        .header img{max-width:100% !important;height:auto !important; max-height:auto !important;}
+        .photo img { width:100% !important; max-width:100% !important; height:auto !important;}
+        .drop { display:block !important; width: 100% !important; float:left; clear:both;}
+        .footerlogo { display:block !important; width: 100% !important; padding-top:15px; float:left; clear:both;}
+        .nav4, .nav5, .nav6 { display: none !important; }
+        .tableBlock {width:100% !important;}
+        .responsive-td {width:100% !important; display:block !important; padding:0 !important; }
+        .fluid, .fluid-centered {
+          width: 100% !important;
+          max-width: 100% !important;
+          height: auto !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+        .fluid-centered {
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+        /* MOBILE GLOBAL STYLES - DO NOT CHANGE */
+        body { padding: 0px !important; font-size: 16px !important; line-height: 150% !important;}
+        h1 { font-size: 22px !important; line-height: normal !important;}
+        h2 { font-size: 20px !important; line-height: normal !important;}
+        h3 { font-size: 18px !important; line-height: normal !important;}
+        .buttonstyles {
+          font-family:arial,helvetica,sans-serif !important;
+          font-size: 16px !important;
+          color: #FFFFFF !important;
+          padding: 10px !important;
+        }
+        /* END OF MOBILE GLOBAL STYLES - DO NOT CHANGE */
+      }
+      @media only screen and (max-width: 640px) {
+        .container { width:100% !important; }
+        .mobile-hidden { display:none !important; }
+        .logo { display:block !important; padding:0 !important; }
+        .photo img { width:100% !important; height:auto !important;}
+        .nav5, .nav6 { display: none !important;}
+        .fluid, .fluid-centered {
+          width: 100% !important;
+          max-width: 100% !important;
+          height: auto !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+        .fluid-centered {
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+      }
+    </style>
+    <!--[if mso]>       <style type="text/css">           /* Begin Outlook Font Fix */               body, table, td {                  font-family : Arial, helvetica, sans-serif;                  line-height : 100%;                  font-size : 16px;                  color : #808080;               }           /* End Outlook Font Fix */       </style>     <![endif]-->
+  </head>
+  <body bgcolor="#EFEFEF" text="#808080" style="margin: 0px; -webkit-text-size-adjust:none;background-color : #EFEFEF; font-family : Arial, helvetica, sans-serif; line-height : 100%; font-size : 16px; color : #808080; padding : 20px; "><style type="text/css">
+div.preheader 
+{ display: none !important; } 
+</style>
+<div class="preheader" style="font-size: 1px; display: none !important;">A memorable night of soccer and community awaits.</div>
+    <div style="font-size:0; line-height:0;"><img src="https://click.fanmail.timbers.com/open.aspx?KRSYBUKGDFWEFEDBBFLU7QPLRY.10205&d=10205&bmt=0" width="1" height="1" alt=""></div>
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" align="center">
+      <tr>
+        <td align="center" valign="top">
+          <div style="margin:18px 0;"><!--   To view this email as a web page, click on the link below,  or copy and paste it into your browser's address window.  https://view.fanmail.timbers.com/?vawpToken=SJHNQINXWV7EHBVHPEI5UVGWWE.10205  .//-->
+<font face="verdana" size="1" color="#444444">To view this email as a web page, go <a href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKdqvRu6JAKIEdq7m8Oq0wdgE8HjvLWGEcgi1Xe3RndCsq6uLLIHGS5eAzgAndCpEoXxk0UWbsSfXk8hZ3PWRU7L2VNWTGuu" >here.</a></font></div>
+        </td>
+      </tr>
+      <tr>
+        <td align="center">
+          <table cellspacing="0" cellpadding="0" border="0" width="600" class="container" align="center">
+            <tr>
+              <td>
+                <!-- added the border style here -->
+                <table style="background-color : #FFFFFF; border : 0px solid transparent;font-size : 16px; font-family : Arial, helvetica, sans-serif; line-height : 100%; color : #808080; " class="tb_properties border_style" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" width="100%">
+                  <!-- end of comment -->
+                  <tr>
+                    <td align="center" valign="top">
+                      <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                          <!-- added padding here -->
+                          <td class="content_padding" style="border:0px;padding : 0px; ">
+                            <!-- end of comment -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td align="left" class="header" valign="top">
+                                  <table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background-color: transparent; border: 0px solid transparent; min-width: 100%; " class="slot-styling"><tr><td style="padding: 0px; " class="slot-styling camarker-inner"><!----><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="min-width: 100%; " class="stylingblock-content-wrapper"><tr><td class="stylingblock-content-wrapper camarker-inner"><table width="100%" cellspacing="0" cellpadding="0" role="presentation"><tr><td align="center"><img data-assetid="1361396" src="https://image.fanmail.timbers.com/lib/fe5a15707c6c07797211/m/1/74ce118c-207c-453b-9029-5744328b6b8d.png" alt="" width="100%" style="display: block; padding: 0px; text-align: center; height: auto; width: 100%; border: 0px;"></td></tr></table></td></tr></table><!----></td></tr></table>
+                                  
+                                </td>
+                              </tr>
+                              <tr>
+                                <td align="left" class="" valign="top">
+                                  <table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background-color: transparent; border: 0px solid transparent; min-width: 100%; " class="slot-styling"><tr><td style="padding: 0px; " class="slot-styling camarker-inner"><!----><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background-color: transparent; min-width: 100%; " class="stylingblock-content-wrapper"><tr><td style="padding: 0px; " class="stylingblock-content-wrapper camarker-inner"><table width="100%" cellspacing="0" cellpadding="0" role="presentation"><tr><td align="center"><a href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKdrlWBDCU_wxi861JcIVf2s9P2jt6oxWQTCnbniX9z80HfdVuSCINaZOxsOZKLjSkXNe97tilfs0pqkeKwt3mPAbZM7Xu1M" title="Pride Night Events &amp; Giveaways"   data-linkto="https://">
+<img data-assetid="1421517" src="https://image.fanmail.timbers.com/lib/fe5a15707c6c07797211/m/1/ec510755-99d8-41cf-a246-3267f985f6ab.jpg" alt="Timbers Pride Night is July 25 - join us!" width="1440" style="display: block; padding: 0px; text-align: center; height: auto; width: 100%; border: 0px transparent;"></a></td></tr></table></td></tr></table><!----><!----><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="min-width: 100%; " class="stylingblock-content-wrapper"><tr><td class="stylingblock-content-wrapper camarker-inner"><table width="100%" cellspacing="0" cellpadding="0" role="presentation"><tr><td align="center"><a href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKdsQntyPPlXYwFgF8DwdK-j6IdBGLkAKVOMJhv7Jn9AHdtLFsOSf-4jGg41uNNR7Fhn1uZl3ZB63nqqgSkwnObJBY4tTu8r" title="Special Offer!"   data-linkto="https://">
+<img data-assetid="1421516" src="https://image.fanmail.timbers.com/lib/fe5a15707c6c07797211/m/1/587ae129-f467-474c-837d-2f6cca6d07f7.jpg" alt="" width="1440" style="display: block; padding: 0px; text-align: center; height: auto; width: 100%; border: 0px;"></a></td></tr></table></td></tr></table><!----><!----><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="min-width: 100%; " class="stylingblock-content-wrapper"><tr><td class="stylingblock-content-wrapper camarker-inner"><table width="100%" cellspacing="0" cellpadding="0" role="presentation"><tr><td align="center"><a href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKdtqFN5AHr_ANWyUFAcyIUTO4sRk2p8aRsREiBzrJvR4h5tZciyF9dd5xAFFluntA_PZ-MNb4THvzpQhp3yQbJoQIPsaQGt" title="Pride Night Tickets"   data-linkto="https://">
+<img data-assetid="1421515" src="https://image.fanmail.timbers.com/lib/fe5a15707c6c07797211/m/1/d10c8265-46ff-4290-9f5b-350c8c192532.jpg" alt="Secure Tickets for Pride Night" width="1440" style="display: block; padding: 0px; text-align: center; height: auto; width: 100%; border: 0px;"></a></td></tr></table></td></tr></table><!----></td></tr></table>
+                                  
+                                </td>
+                              </tr>
+                              <tr>
+                                <td align="left" class="" valign="top">
+                                  <table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background-color: transparent; min-width: 100%; border-top: 0px; border-right: 0px; border-bottom: 1px solid #AEAEAE; border-left: 0px; " class="slot-styling"><tr><td style="padding: 0px 0px 10px; " class="slot-styling camarker-inner"><!----><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="min-width: 100%; " class="stylingblock-content-wrapper"><tr><td class="stylingblock-content-wrapper camarker-inner"><table width="100%" cellspacing="0" cellpadding="0" role="presentation"><tr><td align="center"><a href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKdu0lwvH3TcfAwj_diKSUScl422MZinoHj51daZqiNyWlMLxNJSvn-vPpmuvdMdVzoiVKsVnXKit5y8cMgQgUcV2x4HSFE2" title=""   data-linkto="https://">
+<img data-assetid="1361398" src="https://image.fanmail.timbers.com/lib/fe5a15707c6c07797211/m/1/9daf1731-f739-49e5-a1c3-ae218647d99b.png" alt="" width="100%" style="display: block; padding: 0px; text-align: center; height: auto; width: 100%;"></a></td></tr></table>
+</td></tr></table><!----><!----><table cellpadding="0" cellspacing="0" width="100%" role="presentation" class="stylingblock-content-wrapper" style="min-width: 100%; "><tr><td class="stylingblock-content-margin-cell" align="left" style="padding: 5px 0px 0px; "><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="text-align: left; background-color: transparent; min-width: 100%; " class="stylingblock-content-wrapper"><tr><td style="padding: 0px; " class="stylingblock-content-wrapper camarker-inner" align="left"><table cellpadding="0" cellspacing="0" class="socialshare-wrapper" width="100%"><tr><td align="center"><table cellpadding="0" cellspacing="0" align="center"><tr><td align="center">
+<!--[if mso]><table border="0" cellspacing="0" cellpadding="0"><tr><td style="padding-right:10px;"><![endif]--><table class="socialshare-innertable" style="display: inline-block"><tr><td style="padding:5px 10px"><a href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKdvD_NBNTAnWchQ4aPbfWPlMhWbRxSsHYfW-qaHvqldLLJ5Vf2SsexyzdwfDGqXEjuMcQOmPdI77FT52Ry3-9jQKdfFDKkA" ><img src="https://image.s4.exct.net/lib/fe911573736c007d7d/m/2/0e6fddf1-c205-4752-ad42-e9dc03c83dea.png" alt="Instagram" width="24" height="24" style="display: block;; width: 24px !important; height: 24px !important"></a></td></tr></table><!--[if mso]></td><td style="padding-right:10px;"><![endif]--><table class="socialshare-innertable" style="display: inline-block"><tr><td style="padding:5px 10px">
+<a href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKdwPL00vUcw_MKDEEXfONSE-XHWEXfA-smSYl3GZwldrULf91zz6G5Nj8JVZt1qwCIPRldDQhISTVfRR_FCiYf1AKyrMt_J" ><img src="https://image.s4.exct.net/lib/fe911573736c007d7d/m/2/287abafd-6473-47a9-b05b-30526dc265fd.png" alt="YouTube" width="24" height="24" style="display: block;; width: 24px !important; height: 24px !important"></a></td></tr></table><!--[if mso]></td><td style="padding-right:10px;"><![endif]--><table class="socialshare-innertable" style="display: inline-block"><tr><td style="padding:5px 10px"><a href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKdxz-cuXABaGZl_zpqgnnfRApBLh-FFP9M7JRBt424KR1nE-CyTlUHvXrL5eYlwETDTyUWdcldhJwTZOzRVYZg21pYGw4IK" >
+<img src="https://image.s4.exct.net/lib/fe911573736c007d7d/m/2/1a560d12-c8d7-40cb-9e90-9df36933fdfa.png" alt="Facebook" width="24" height="24" style="display: block;; width: 24px !important; height: 24px !important"></a></td></tr></table><!--[if mso]></td><td><![endif]--><table class="socialshare-innertable" style="display: inline-block"><tr><td style="padding:5px 10px"><a href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKdy-hQAGbfO9B5VZRP_Pk2NFcXhWFjCtIhqdaJ4ABSzAaQlk36Zc5A3qyLjzUBj0o4uLYNvGwBGTHQZXVXd-dfu56qLqdsw" ><img src="https://image.s4.exct.net/lib/fe911573736c007d7d/m/2/153eebc5-ec10-4239-82f3-ccd016962e7d.png" alt="X" width="24" height="24" style="display: block;; width: 24px !important; height: 24px !important"></a></td></tr></table><!--[if mso]></td></tr></table>
+<![endif]--></td></tr></table></td></tr></table></td></tr></table></td></tr></table><!----></td></tr></table>
+                                  
+                                </td>
+                              </tr>
+                              <tr>
+                                <td align="left" class="" valign="top">
+                                  <table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="min-width: 100%; " class="slot-styling"><tr><td style="padding-top: 20px; " class="slot-styling camarker-inner"><!----><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="text-align: center; min-width: 100%; " class="stylingblock-content-wrapper"><tr><td class="stylingblock-content-wrapper camarker-inner" align="center"><div style="text-align: center;">
+	<a   data-linkto="https://" href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKdzCA-EU1xmzKAroloJ5VGFkm9rQtJ8QwfFgnN72Yc85inX-Q2_Zq_4Ml5EOpG0NIk3naBM3h3FtaM1eF_qQTL1MGmy7SqR" style="color:#808080;text-decoration:none;" title="TICKETS">TICKETS</a>&nbsp; &nbsp;|&nbsp; <a   data-linkto="https://" href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKd07kQhQ0f3HjJaUuqt1-TaNo-Rwv779VoroObOhGUlsYizQKgDE9QZZgszkzVAYbq7hvxOLlV0Q8D_ujEC-cJOlYxZLoSo" style="color:#808080;text-decoration:none;" title="NEWS">NEWS</a>&nbsp; |&nbsp; <a   data-linkto="https://" href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKd1f-IpbakV2rqNo2kPfji7eGEtn0CcmRWzqSfJWQxfNxJ35ludQJnhP5ppqrGNZ6DqSDIIJL4ktgwyFQlsMFEHV016wbeE" style="color:#808080;text-decoration:none;" title="SHOP">SHOP</a></div></td></tr></table><!----></td></tr></table>
+                                  
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">
+          <table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#fff;"> 
+    <!-- FOOTER CONTENT -->
+    <tr>
+        <td align="center" valign="top" style="background:#fff;" width="100%">
+        <table class="container" cellpadding="0" cellspacing="0" width="600">
+            <tr>
+                <td align="center" style="font-family: Verdana, Helvetica, Arial, sans-serif; font-size: 11px; color: #959595; padding:0px 0px 25px 0px;">
+                This email was sent by: 
+                <span>Portland Timbers<br>
+                1844 SW Morrison, Portland, OR, 97205 USA</span>
+                <br>
+                <br>
+                <a href="https://click.fanmail.timbers.com/?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKd2oOdMbY3Nm8KLjlg8blHb3hiYmWJqyUCkOCH4ily9nVGcSN1zNeNrH8Gh_ezoA07su0LAC1k5ohan0xvf37T9zUhDaAWB"  target="_blank" style="font-size:12px; color: #959595; text-decoration: none; font-weight:bold;">Privacy Policy</a>
+                <br>
+                <br>
+                <a href="https://click.fanmail.timbers.com/profile_center.aspx?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKd3z9rqeMa1CSlprm9F2noNUG14wCEjF_ivPHqtPN6BdFZd-nEvc8cBTrPAvKy9DfRfui0CYYgeDoNzxQoUzpgfdgseF1qDCSK8VL9ZWIgRhXeSDY2kwD_rNKs"  target="_blank" style="font-size:12px; color: #959595; text-decoration: none; font-weight:bold;">Update Profile</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://click.fanmail.timbers.com/unsub_center.aspx?qs=ABB7InYiOjEsImQiOjQ5NDd9AAEAAAAAAT4rVKd4uHaR9T5SIk4j4ZUfOA7GsEQdEP1kSW-8pTciXWWMLPh3IH_1wDRGZE5eltwUxMLnewA_45j1VnwUKJ3-Qr3x1oVFAGyRaPFI9wiHLE0InIR_5cLY7mGH1h1yag"  target="_blank" style="font-size:12px; color: #959595; text-decoration: none; font-weight:bold;">Unsubscribe</a>
+                </td>
+            </tr>
+        </table>
+        </td>
+    </tr> 
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+
+--FZxk9uCIOI3y=_?:--
+
+
