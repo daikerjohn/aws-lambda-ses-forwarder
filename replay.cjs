@@ -1,8 +1,19 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { S3Client, CopyObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { SESv2Client } = require("@aws-sdk/client-sesv2");
 
 function loadJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
+function loadReplayConfig(configPath) {
+  if (!configPath) {
+    return null;
+  }
+
+  const resolvedPath = path.resolve(configPath);
+  return loadJsonFile(resolvedPath);
 }
 
 function extractRecipientFromEmailContent(emailContent) {
@@ -61,6 +72,61 @@ function createLocalOverrides(emailContent) {
   };
 }
 
+function createAwsOverrides(emailContent, options = {}) {
+  const region = options.region || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "us-east-1";
+  const sesClient = options.sesClientFactory
+    ? options.sesClientFactory({ region })
+    : new SESv2Client({ region });
+  const s3Client = options.s3ClientFactory
+    ? options.s3ClientFactory({ region })
+    : new S3Client({ region, signatureVersion: "v4" });
+
+  return {
+    s3: {
+      send: (command, callback) => {
+        if (typeof callback !== "function") {
+          return;
+        }
+
+        if (command instanceof CopyObjectCommand) {
+          callback(null, {});
+          return;
+        }
+
+        if (command instanceof GetObjectCommand) {
+          callback(null, {
+            Body: {
+              transformToString: async () => emailContent
+            }
+          });
+          return;
+        }
+
+        callback(null, {});
+      },
+      client: s3Client
+    },
+    ses: {
+      send: (command, callback) => {
+        if (typeof callback !== "function") {
+          return;
+        }
+
+        const promise = Promise.resolve().then(() => sesClient.send(command));
+        promise.then((result) => callback(null, result)).catch((err) => callback(err));
+      },
+      client: sesClient
+    },
+    log: (entry) => {
+      if (entry && typeof entry === "object") {
+        console.log(entry.message || JSON.stringify(entry));
+      } else {
+        console.log(entry);
+      }
+    }
+  };
+}
+
 async function replayFromEventFile(eventFilePath, options = {}) {
   const resolvedEventFilePath = path.resolve(eventFilePath);
   let event;
@@ -82,8 +148,9 @@ async function replayFromEventFile(eventFilePath, options = {}) {
     }
   };
 
-  const importedIndex = await import("./index.mjs");
+  const importedIndex = await import("./index.js");
   const configPath = options.configPath ? path.resolve(options.configPath) : null;
+  const replayConfig = loadReplayConfig(options.replayConfigPath || options.configPath);
   const defaultConfig = importedIndex.defaultConfig || {};
   let finalConfig = {
     ...defaultConfig,
@@ -107,14 +174,27 @@ async function replayFromEventFile(eventFilePath, options = {}) {
       }
     };
   }
+
+  const awsOptions = replayConfig && replayConfig.aws ? replayConfig.aws : {};
+  const mergedOptions = {
+    ...options,
+    ...awsOptions,
+    region: options.region || awsOptions.region || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "us-east-1"
+  };
   const handler = options.handler || importedIndex.handler;
   const useLocalOverrides = Boolean(event.emailContent) || options.replayMode === "s3";
+  const useAwsOverrides = Boolean(mergedOptions.send) || options.replayMode === "aws";
   const overrides = {
     config: finalConfig,
     log: options.log || console.log
   };
 
-  if (useLocalOverrides) {
+  if (useAwsOverrides) {
+    const awsOverrides = createAwsOverrides(event.emailContent || "", mergedOptions);
+    overrides.s3 = awsOverrides.s3;
+    overrides.ses = awsOverrides.ses;
+    overrides.log = awsOverrides.log;
+  } else if (useLocalOverrides) {
     const localOverrides = createLocalOverrides(event.emailContent || "");
     overrides.s3 = localOverrides.s3;
     overrides.ses = localOverrides.ses;
@@ -140,12 +220,45 @@ async function replayFromEventFile(eventFilePath, options = {}) {
 
 async function replayFromEventFileCli(argv = process.argv.slice(2)) {
   if (!argv.length || argv.includes("--help") || argv.includes("-h")) {
-    throw new Error("Usage: node replay.cjs <event-file> [config-file]");
+    throw new Error("Usage: node replay.cjs <event-file> [config-file] [--send] [--region <region>]");
   }
 
-  const [eventFilePath, configFilePath] = argv;
-  const result = await replayFromEventFile(eventFilePath, { configPath: configFilePath });
-  console.log(JSON.stringify(result, null, 2));
+  let eventFilePath;
+  let configFilePath;
+  let replayConfigPath;
+  let send = false;
+  let region;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--send" || arg === "--live" || arg === "--real") {
+      send = true;
+    } else if (arg === "--region") {
+      region = argv[index + 1];
+      index += 1;
+    } else if (arg === "--replay-config") {
+      replayConfigPath = argv[index + 1];
+      index += 1;
+    } else if (!eventFilePath) {
+      eventFilePath = arg;
+    } else if (!configFilePath) {
+      configFilePath = arg;
+    } else {
+      throw new Error("Unexpected argument: " + arg);
+    }
+  }
+
+  if (!eventFilePath) {
+    throw new Error("Usage: node replay.cjs <event-file> [config-file] [--send] [--region <region>]");
+  }
+
+  const result = await replayFromEventFile(eventFilePath, {
+    configPath: configFilePath,
+    replayConfigPath,
+    send,
+    region
+  });
+  //console.log(JSON.stringify(result, null, 2));
   return result;
 }
 

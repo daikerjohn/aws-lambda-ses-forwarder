@@ -1,0 +1,12 @@
+{
+  "aws": {
+    "region": "us-west-2",
+    "send": true
+  },
+  "fromEmail": "noreply@daikerjohn.cc",
+  "forwardMapping": {
+    "@daikerjohn.cc": [
+      "johndaiker@hotmail.com"
+    ]
+  }
+}

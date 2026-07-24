@@ -110,6 +110,29 @@ describe('index.js', function() {
           });
       });
 
+    it('should return the data object when there are no new recipients',
+      function(done) {
+        var data = {
+          recipients: ["noreply@example.com"],
+          config: {
+            forwardMapping: {
+              "info@example.com": [
+                "jim@example.com"
+              ]
+            }
+          },
+          callback: function() {
+            done();
+          },
+          log: console.log
+        };
+        index.transformRecipients(data)
+          .then(function(result) {
+            assert.strictEqual(result, data);
+          })
+          .catch(done);
+      });
+
     it('should exit if there are no new recipients',
       function(done) {
         var data = {

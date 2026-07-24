@@ -185,6 +185,30 @@ the email. See `index.js` for the default set of steps.
 See [example](https://github.com/arithmetric/aws-lambda-ses-forwarder/tree/master/example)
 for how to provide configuration as overrides.
 
+## Live replay send example
+
+You can also use the replay entrypoint to send a real message through SES. Create a JSON file such as `replay-config.json` with your AWS settings and forwarding configuration:
+
+```json
+{
+  "aws": {
+    "region": "us-east-1",
+    "send": true
+  },
+  "forwardMapping": {
+    "timbers@daikerjohn.cc": ["you@example.com"]
+  }
+}
+```
+
+Then run:
+
+```bash
+node replay.cjs sample.eml replay-config.json --send --replay-config replay-config.json
+```
+
+If you prefer to rely on AWS environment variables instead of the config file, you can omit the `aws` block and use the standard AWS SDK environment variables.
+
 ## Troubleshooting
 
 Test the configuration by sending emails to recipient addresses.
