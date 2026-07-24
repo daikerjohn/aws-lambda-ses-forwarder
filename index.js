@@ -1,12 +1,9 @@
 "use strict";
 
-import { createRequire } from "node:module";
-
-const require = createRequire(import.meta.url);
 const { S3Client, CopyObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 const { SESv2Client, SendEmailCommand } = require("@aws-sdk/client-sesv2");
 
-console.log("AWS Lambda SES Forwarder // @arithmetric // Version 5.2.0");
+console.log("AWS Lambda SES Forwarder // @arithmetric // Version 5.1.0");
 
 // Configure the S3 bucket and key prefix for stored raw emails, and the
 // mapping of email addresses to forward from and to.
@@ -39,7 +36,7 @@ console.log("AWS Lambda SES Forwarder // @arithmetric // Version 5.2.0");
 //   and domain part of an email address (i.e. `info`).
 //
 //   To match all email addresses matching no other mapping, use "@" as a key.
-export const defaultConfig = {
+var defaultConfig = {
   fromEmail: "noreply@daikerjohn.cc",
   subjectPrefix: "",
   emailBucket: "emailbucket-daikerjohncc",
@@ -59,7 +56,7 @@ export const defaultConfig = {
  *
  * @return {object} - Promise resolved with data.
  */
-const parseEvent = function(data) {
+exports.parseEvent = function(data) {
   // Validate characteristics of a SES event record.
   if (!data.event ||
     !Object.hasOwn(data.event, 'Records') ||
@@ -76,8 +73,6 @@ const parseEvent = function(data) {
 
   data.email = data.event.Records[0].ses.mail;
   data.recipients = data.event.Records[0].ses.receipt.recipients;
-  data.spamVerdict = data.event.Records[0].ses.receipt.spamVerdict;
-  data.virusVerdict = data.event.Records[0].ses.receipt.virusVerdict;
   return Promise.resolve(data);
 };
 
@@ -88,7 +83,7 @@ const parseEvent = function(data) {
  *
  * @return {object} - Promise resolved with data.
  */
-const transformRecipients = function(data) {
+exports.transformRecipients = function(data) {
   var newRecipients = [];
   data.originalRecipients = data.recipients;
   data.recipients.forEach(function(origEmail) {
@@ -134,7 +129,10 @@ const transformRecipients = function(data) {
         "original destinations: " + data.originalRecipients.join(", "),
       level: "info"
     });
-    return data.callback();
+    if (typeof data.callback === "function") {
+      data.callback();
+    }
+    return Promise.resolve(data);
   }
 
   data.recipients = newRecipients;
@@ -148,7 +146,7 @@ const transformRecipients = function(data) {
  *
  * @return {object} - Promise resolved with data.
  */
-const fetchMessage = async function(data) {
+exports.fetchMessage = function(data) {
   // Copying email object to ensure read permission
   data.log({
     level: "info",
@@ -206,7 +204,7 @@ const fetchMessage = async function(data) {
  *
  * @return {object} - Promise resolved with data.
  */
-const processMessage = function(data) {
+exports.processMessage = function(data) {
   var match = data.emailData.match(/^((?:.+\r?\n)*)(\r?\n(?:.*\s+)*)/m);
   var header = match && match[1] ? match[1] : data.emailData;
   var body = match && match[2] ? match[2] : '';
@@ -256,25 +254,9 @@ const processMessage = function(data) {
       });
   }
 
-  // Check the length of the original 'To' header and trim it if over length
-  // Include all of our addresses and as many other addresses as possible
-  if (data.config.toInclude) {
-    header = header.replace(
-      /^To: (.*(?:\r?\n\s+.*)*\r?\n)/mg,
-      function(match, to) {
-        var AWS_MAX_RECIPIENTS = 50;
-        var toArr = to.replace(/\s+/g, '').split(',');
-
-        if (toArr.length >= AWS_MAX_RECIPIENTS) {
-          var ourArr = toArr.filter(
-            (addr) => {return addr.search(data.config.toInclude) >= 0});
-          var otherArr = toArr.filter(
-            (addr) => {return addr.search(data.config.toInclude) < 0});
-          toArr = ourArr.concat(otherArr);
-          toArr = toArr.slice(0, AWS_MAX_RECIPIENTS);
-        }
-        return 'To: ' + toArr.join(', ') + '\n';
-      });
+  // Replace original 'To' header with a manually defined one
+  if (data.config.toEmail) {
+    header = header.replace(/^to:[\t ]?(.*)/mgi, 'To: ' + data.config.toEmail);
   }
 
   // Remove the Return-Path header.
@@ -282,9 +264,6 @@ const processMessage = function(data) {
 
   // Remove Sender header.
   header = header.replace(/^sender:[\t ]?(.*)\r?\n/mgi, '');
-
-  // Remove Precedence header.
-  header = header.replace(/^Precedence: (.*)\r?\n/mg, '');
 
   // Remove Message-ID header.
   header = header.replace(/^message-id:[\t ]?(.*)\r?\n/mgi, '');
@@ -300,43 +279,13 @@ const processMessage = function(data) {
 };
 
 /**
- * Checks spam and virus verdict, rejecting if not "PASS".
- *
- * @param {object} data - Data bundle with context, email, etc.
- *
- * @return {object} - Promise resolved with data.
- */
-const checkSpam = function(data) {
-  var match = data.emailData.match(/^((?:.+\r?\n)*)(\r?\n(?:.*\s+)*)/m);
-  var header = match && match[1] ? match[1] : data.emailData;
-  var subject = header.match(/^Subject: (.*)/mg);
-
-  if (data.spamVerdict.status !== "PASS") {
-    data.log({level: "error", message: "spamVerdict not clean:",
-      event: JSON.stringify(data.event)});
-    data.log({level: "error", message: "Subject: " + subject});
-    return Promise.reject(new Error('Error: spamVerdict not clean.'));
-  }
-
-  if (data.virusVerdict.status !== "PASS") {
-    data.log({level: "error", message: "virusVerdict not clean:",
-      event: JSON.stringify(data.event)});
-    data.log({level: "error", message: "Subject: " + subject});
-    return Promise.reject(new Error('Error: virusVerdict not clean.'));
-  }
-
-  data.log({level: "info", message: "checkSpam run and passed"});
-  return Promise.resolve(data);
-};
-
-/**
  * Send email using the SESv2 SendEmailCommand command.
  *
  * @param {object} data - Data bundle with context, email, etc.
  *
  * @return {object} - Promise resolved with data.
  */
-const sendMessage = async function(data) {
+exports.sendMessage = function(data) {
   var params = {
     Destination: { ToAddresses: data.recipients },
     Source: data.originalRecipient,
@@ -367,7 +316,6 @@ const sendMessage = async function(data) {
       resolve(data);
     });
   });
-  return data;
 };
 
 /**
@@ -380,16 +328,14 @@ const sendMessage = async function(data) {
  * @param {object} overrides - Overrides for the default data, including the
  * configuration, SES object, and S3 object.
  */
-const exported = {};
-
-export const handler = function(event, context, callback, overrides) {
+exports.handler = function(event, context, callback, overrides) {
   var steps = overrides && overrides.steps ? overrides.steps :
       [
-        exported.parseEvent,
-        exported.transformRecipients,
-        exported.fetchMessage,
-        exported.processMessage,
-        exported.sendMessage
+        exports.parseEvent,
+        exports.transformRecipients,
+        exports.fetchMessage,
+        exports.processMessage,
+        exports.sendMessage
       ];
   var data = {
     event: event,
@@ -430,12 +376,3 @@ Promise.series = function(promises, initValue) {
     return chain.then(promise);
   }, Promise.resolve(initValue));
 };
-
-exported.parseEvent = parseEvent;
-exported.transformRecipients = transformRecipients;
-exported.fetchMessage = fetchMessage;
-exported.processMessage = processMessage;
-exported.checkSpam = checkSpam;
-exported.sendMessage = sendMessage;
-exported.handler = handler;
-exported.defaultConfig = defaultConfig;
