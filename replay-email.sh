@@ -7,3 +7,5 @@ if [[ "$eml_file" == "" ]]; then
 fi
 
 AWS_PROFILE=sesforwarder-replay node replay.cjs $eml_file replay-config.json --send --replay-config replay-config.json
+
+sleep 3
